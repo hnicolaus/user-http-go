@@ -3,7 +3,7 @@ module github.com/SawitProRecruitment/UserService
 go 1.19
 
 require (
-	github.com/getkin/kin-openapi v0.120.0
+	github.com/getkin/kin-openapi v0.118.0
 	github.com/golang/mock v1.6.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/lib/pq v1.10.9

@@ -57,3 +57,60 @@ func buildQueryInsertUsers(in []User) (string, []interface{}) {
 
 	return query, params
 }
+
+func (r *Repository) GetUser(ctx context.Context, request UserFilter) (user User, err error) {
+	query, params := buildQueryGetUser(request)
+
+	rows, err := r.Db.QueryContext(ctx, query, params...)
+	if err != nil {
+		return user, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		if user != (User{}) {
+			break
+		}
+
+		if err := rows.Scan(
+			&user.ID,
+			&user.FullName,
+			&user.PhoneNumber,
+			&user.Password,
+			&user.CreatedTime,
+			&user.UpdatedTime,
+		); err != nil {
+			return user, err
+		}
+	}
+
+	return user, nil
+}
+
+func buildQueryGetUser(in UserFilter) (string, []interface{}) {
+	var (
+		query  string = querySelectUsers
+		params []interface{}
+		offset int = 0
+	)
+
+	if in.PhoneNumber != "" {
+		query += fmt.Sprintf(whereUserPhoneNumber, offset+1)
+		params = append(
+			params,
+			in.PhoneNumber,
+		)
+		offset++
+	}
+
+	if in.Password != "" {
+		query += fmt.Sprintf(whereUserPasssword, offset+1)
+		params = append(
+			params,
+			in.Password,
+		)
+		offset++
+	}
+
+	return query, params
+}

@@ -7,11 +7,15 @@
   In this assignment we will use PostgreSQL as the database.
   */
 
-/** This is test table. Remove this table and replace with your own tables. */
-CREATE TABLE test (
-	id serial PRIMARY KEY,
-	name VARCHAR ( 50 ) UNIQUE NOT NULL,
+CREATE TABLE sawitpro_user (
+  id serial PRIMARY KEY,
+  full_name text NOT NULL,
+  phone_number text NOT NULL,
+  "password" text not null,
+  created_time timestamp NOT NULL default now(),
+  updated_time timestamp,
+  CONSTRAINT sawitpro_user_phone_number_uniquekey UNIQUE (phone_number)
 );
 
-INSERT INTO test (name) VALUES ('test1');
-INSERT INTO test (name) VALUES ('test2');
+INSERT INTO sawitpro_user (full_name, phone_number, "password") VALUES ('name1', '+6281234567890', 'password1');
+INSERT INTO sawitpro_user (full_name, phone_number, "password") VALUES ('name2', '+6289876543210', 'password2');

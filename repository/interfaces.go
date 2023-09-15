@@ -7,5 +7,5 @@ package repository
 import "context"
 
 type RepositoryInterface interface {
-	GetTestById(ctx context.Context, input GetTestByIdInput) (output GetTestByIdOutput, err error)
+	InsertUser(ctx context.Context, user User) (userID int64, err error)
 }

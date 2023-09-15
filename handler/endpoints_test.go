@@ -2,6 +2,6 @@ package handler
 
 import "testing"
 
-func TestHello(t *testing.T) {
+func TestRegisterUser(t *testing.T) {
 
 }

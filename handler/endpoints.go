@@ -68,8 +68,8 @@ func convertRegisterUserRequestToUser(request generated.User) (user repository.U
 	}
 
 	return repository.User{
-		FullName:    validPhoneNumber,
-		PhoneNumber: validFullName,
+		FullName:    validFullName,
+		PhoneNumber: validPhoneNumber,
 		Password:    validPassword,
 	}, nil
 }

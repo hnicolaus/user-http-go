@@ -21,7 +21,7 @@ func (r *Repository) InsertUser(ctx context.Context, user User) (userID int64, e
 
 	query, params := buildQueryInsertUsers([]User{user})
 
-	err = r.Db.QueryRowContext(ctx, query, params[0], params[1], params[2], params[3]).Scan(&userID) //NOTE: figure out why can't pass []interface
+	err = r.Db.QueryRowContext(ctx, query, params...).Scan(&userID)
 
 	return
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/SawitProRecruitment/UserService/generated"
 	"github.com/SawitProRecruitment/UserService/handler"
 	"github.com/SawitProRecruitment/UserService/repository"
@@ -18,9 +20,7 @@ func main() {
 }
 
 func newServer() *handler.Server {
-	// NOTE: hardcoding temporarily for speedy dev
-	// dbDsn := os.Getenv("DATABASE_URL")
-	dbDsn := "user=postgres password=postgres host=localhost port=5432 dbname=database sslmode=disable"
+	dbDsn := os.Getenv("DATABASE_URL")
 	var repo repository.RepositoryInterface = repository.NewRepository(repository.NewRepositoryOptions{
 		Dsn: dbDsn,
 	})

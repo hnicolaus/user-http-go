@@ -39,6 +39,18 @@ paths:
         '500':
           description: Internal server error
   /v1/user:
+    get:
+      operationId: GetUser
+      summary: Get an existing new user
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUserResponse'
+        '403':
+          description: Forbidden
     post:
       operationId: RegisterUser
       summary: Create a new user
@@ -61,6 +73,16 @@ paths:
           description: Internal server error
 components:
   schemas:
+    GetUserResponse:
+        type: object
+        properties:
+          header:
+            $ref: '#/components/schemas/ResponseHeader'
+          data:
+            $ref: '#/components/schemas/User'
+        required:
+          - header
+          - data
     UserLoginResponse:
         type: object
         properties:

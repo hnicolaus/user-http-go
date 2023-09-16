@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -103,6 +104,15 @@ func buildQueryGetUser(in UserFilter) (string, []interface{}, error) {
 		params = append(
 			params,
 			in.PhoneNumber,
+		)
+		offset++
+	}
+
+	if in.UserID != 0 {
+		query += fmt.Sprintf(whereUserID, offset+1)
+		params = append(
+			params,
+			strconv.Itoa(int(in.UserID)),
 		)
 		offset++
 	}

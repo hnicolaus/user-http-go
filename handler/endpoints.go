@@ -16,10 +16,69 @@ import (
 )
 
 const (
-	duplicatePhoneNumberErrMsg = "phone number is already registered to an existing user"
-	successMsg                 = "request successful"
-	saltCost                   = 12
+	successMsg = "request successful"
 )
+
+func (s *Server) GetUser(ctx echo.Context) error {
+	var (
+		response = generated.GetUserResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
+		}
+	)
+
+	// Authenticate JWT
+	err := utils.AuthenticateJWT(ctx)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	// Authorize JWT
+	permissions, ok := ctx.Get("permissions").([]utils.JWTPermission)
+	if !ok {
+		response.Header.Messages = []string{"no permission"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	hasRole := false
+	for _, permission := range permissions {
+		if permission == utils.JWTPermissionGetUser {
+			hasRole = true
+		}
+	}
+
+	if !hasRole {
+		response.Header.Messages = []string{"no permission"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	userID, ok := ctx.Get("user_id").(int64)
+	if !ok {
+		response.Header.Messages = []string{"JWT missing user_id"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	// Get data for userID in the JWT
+	users, err := s.Repository.GetUsers(context.Background(), repository.UserFilter{UserID: userID})
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+	if len(users) == 0 {
+		response.Header.Messages = []string{"user not found"}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+	user := users[0]
+
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	response.Data = generated.User{
+		FullName:    &user.FullName,
+		PhoneNumber: &user.PhoneNumber,
+	}
+
+	return ctx.JSON(http.StatusOK, response)
+}
 
 func (s *Server) UserLogin(ctx echo.Context) error {
 	var (
@@ -63,8 +122,8 @@ func (s *Server) UserLogin(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
-	permissions := []utils.JWTPermission{utils.ProfileGet, utils.ProfileUpdate}
-	jwt, err := utils.GenerateJWT(userFilter.PhoneNumber, permissions)
+	permissions := []utils.JWTPermission{utils.JWTPermissionGetUser}
+	jwt, err := utils.GenerateJWT(user.ID, permissions)
 	if err != nil {
 		response.Header.Messages = []string{err.Error()}
 		return ctx.JSON(http.StatusInternalServerError, response)
@@ -111,7 +170,7 @@ func (s *Server) RegisterUser(ctx echo.Context) error {
 	userID, err := s.Repository.InsertUser(context.Background(), user)
 	if err != nil {
 		if utils.IsUniqueConstraintViolation(err) {
-			response.Header.Messages = []string{duplicatePhoneNumberErrMsg}
+			response.Header.Messages = []string{"phone number is already registered to an existing user"}
 			return ctx.JSON(http.StatusConflict, response)
 		}
 

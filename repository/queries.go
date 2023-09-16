@@ -9,5 +9,5 @@ var (
 var (
 	querySelectUsers     = "SELECT id, full_name, phone_number, password, created_time, updated_time FROM sawitpro_user WHERE true"
 	whereUserPhoneNumber = " AND phone_number = $%d"
-	whereUserPasssword   = " AND password = $%d"
+	whereUserID          = " AND id = $%d"
 )

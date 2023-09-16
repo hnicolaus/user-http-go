@@ -21,5 +21,6 @@ type User struct {
 }
 
 type UserFilter struct {
+	UserID      int64  `db:"user_id"`
 	PhoneNumber string `db:"phone_number"`
 }

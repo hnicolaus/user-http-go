@@ -49,6 +49,20 @@ func (mr *MockRepositoryInterfaceMockRecorder) GetUsers(ctx, request interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockRepositoryInterface)(nil).GetUsers), ctx, request)
 }
 
+// IncrementSuccessfulLoginCount mocks base method.
+func (m *MockRepositoryInterface) IncrementSuccessfulLoginCount(ctx context.Context, userID int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementSuccessfulLoginCount", ctx, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementSuccessfulLoginCount indicates an expected call of IncrementSuccessfulLoginCount.
+func (mr *MockRepositoryInterfaceMockRecorder) IncrementSuccessfulLoginCount(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementSuccessfulLoginCount", reflect.TypeOf((*MockRepositoryInterface)(nil).IncrementSuccessfulLoginCount), ctx, userID)
+}
+
 // InsertUser mocks base method.
 func (m *MockRepositoryInterface) InsertUser(ctx context.Context, user User) (int64, error) {
 	m.ctrl.T.Helper()
@@ -62,4 +76,19 @@ func (m *MockRepositoryInterface) InsertUser(ctx context.Context, user User) (in
 func (mr *MockRepositoryInterfaceMockRecorder) InsertUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUser", reflect.TypeOf((*MockRepositoryInterface)(nil).InsertUser), ctx, user)
+}
+
+// UpdateUser mocks base method.
+func (m *MockRepositoryInterface) UpdateUser(ctx context.Context, user User) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUser", ctx, user)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUser indicates an expected call of UpdateUser.
+func (mr *MockRepositoryInterfaceMockRecorder) UpdateUser(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockRepositoryInterface)(nil).UpdateUser), ctx, user)
 }

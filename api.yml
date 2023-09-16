@@ -71,8 +71,37 @@ paths:
           description: Bad request - Invalid input
         '500':
           description: Internal server error
+    put:
+      operationId: UpdateUser
+      summary: Update an existing user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateUserResponse'
+        '403':
+          description: Forbidden
+        '409':
+          description: Conflict
+        '500':
+          description: Internal server error
 components:
   schemas:
+    UpdateUserResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ResponseHeader'
+      required:
+        - header
     GetUserResponse:
         type: object
         properties:

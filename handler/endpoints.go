@@ -19,6 +19,102 @@ const (
 	successMsg = "request successful"
 )
 
+func (s *Server) UpdateUser(ctx echo.Context) error {
+	var (
+		response = generated.UpdateUserResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
+		}
+	)
+
+	// Authenticate JWT
+	err := utils.AuthenticateJWT(ctx)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	// Authorize JWT
+	permissions, ok := ctx.Get("permissions").([]utils.JWTPermission)
+	if !ok {
+		response.Header.Messages = []string{"no permission"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	hasRole := false
+	for _, permission := range permissions {
+		if permission == utils.JWTPermissionUpdateUser {
+			hasRole = true
+		}
+	}
+
+	if !hasRole {
+		response.Header.Messages = []string{"no permission"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	userID, ok := ctx.Get("user_id").(int64)
+	if !ok {
+		response.Header.Messages = []string{"JWT missing user_id"}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	// Update user data
+	request := generated.User{}
+	err = json.NewDecoder(ctx.Request().Body).Decode(&request)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	updateRequest, errorList := convertUpdateUserRequestToUser(userID, request)
+	if len(errorList) > 0 {
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	totalUpdatedUsers, err := s.Repository.UpdateUser(context.Background(), updateRequest)
+	if err != nil {
+		if utils.IsUniqueConstraintViolation(err) {
+			response.Header.Messages = []string{"phone number is already registered to an existing user"}
+			return ctx.JSON(http.StatusConflict, response)
+		}
+
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+	if totalUpdatedUsers == 0 {
+		response.Header.Messages = []string{"user not found"}
+		return ctx.JSON(http.StatusNotFound, response)
+	}
+
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	return ctx.JSON(http.StatusOK, response)
+}
+
+func convertUpdateUserRequestToUser(userID int64, request generated.User) (user repository.User, errorMsgs []string) {
+	if request.PhoneNumber != nil {
+		validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
+		user.PhoneNumber = validPhoneNumber
+
+		errorMsgs = append(errorMsgs, phoneNumberErrorMsgs...)
+	}
+
+	if request.FullName != nil {
+		validFullName, fullNameErrorMsgs := validateFullName(request.FullName)
+		user.FullName = validFullName
+
+		errorMsgs = append(errorMsgs, fullNameErrorMsgs...)
+
+	}
+
+	if len(errorMsgs) > 0 {
+		return repository.User{}, errorMsgs
+	}
+
+	user.ID = userID
+	return user, nil
+}
+
 func (s *Server) GetUser(ctx echo.Context) error {
 	var (
 		response = generated.GetUserResponse{
@@ -122,7 +218,7 @@ func (s *Server) UserLogin(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
-	permissions := []utils.JWTPermission{utils.JWTPermissionGetUser}
+	permissions := []utils.JWTPermission{utils.JWTPermissionGetUser, utils.JWTPermissionUpdateUser}
 	jwt, err := utils.GenerateJWT(user.ID, permissions)
 	if err != nil {
 		response.Header.Messages = []string{err.Error()}

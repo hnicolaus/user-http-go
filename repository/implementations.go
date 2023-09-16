@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -128,4 +129,60 @@ func (r *Repository) IncrementSuccessfulLoginCount(ctx context.Context, userID i
 
 	defer rows.Close()
 	return nil
+}
+
+func (r *Repository) UpdateUser(ctx context.Context, in User) (int64, error) {
+	var (
+		query     string
+		setFields []string
+		params    []interface{}
+		offset    int = 0
+	)
+
+	if in.PhoneNumber != "" {
+		setFields = append(setFields, fmt.Sprintf(setUserPhoneNumberF, offset+1))
+		params = append(
+			params,
+			in.PhoneNumber,
+		)
+		offset++
+	}
+
+	if in.FullName != "" {
+		setFields = append(setFields, fmt.Sprintf(setUserFullNameF, offset+1))
+		params = append(
+			params,
+			in.FullName,
+		)
+		offset++
+	}
+
+	setFields = append(setFields, fmt.Sprintf(setUserUpdatedTimeF, offset+1))
+	params = append(
+		params,
+		time.Now(),
+	)
+	offset++
+
+	query = fmt.Sprintf(queryUpdateUserF, strings.Join(setFields, ","))
+
+	query += fmt.Sprintf(whereUserID, offset+1)
+	params = append(
+		params,
+		in.ID,
+	)
+	offset++
+
+	result, err := r.Db.ExecContext(ctx, query, params...)
+	if err != nil {
+		return 0, err
+	}
+
+	// Check the affected rows count
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return affectedRows, nil
 }

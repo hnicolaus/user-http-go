@@ -15,3 +15,10 @@ var (
 var (
 	queryIncrementSuccessfulLoginCount = "UPDATE sawitpro_user SET successful_login_count = successful_login_count + 1 WHERE id = $1"
 )
+
+var (
+	queryUpdateUserF    = "UPDATE sawitpro_user SET %s WHERE TRUE"
+	setUserPhoneNumberF = "phone_number = $%d"
+	setUserFullNameF    = "full_name = $%d"
+	setUserUpdatedTimeF = "updated_time = $%d"
+)

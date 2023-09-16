@@ -13,11 +13,12 @@ const (
 )
 
 func (r *Repository) InsertUser(ctx context.Context, user User) (userID int64, err error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), saltCost)
+	hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), saltCost)
 	if err != nil {
 		return userID, err
 	}
-	user.Password = string(hashedPassword)
+
+	user.Password = string(hashedPasswordBytes)
 
 	query, params := buildQueryInsertUsers([]User{user})
 
@@ -58,19 +59,20 @@ func buildQueryInsertUsers(in []User) (string, []interface{}) {
 	return query, params
 }
 
-func (r *Repository) GetUser(ctx context.Context, request UserFilter) (user User, err error) {
-	query, params := buildQueryGetUser(request)
+func (r *Repository) GetUsers(ctx context.Context, request UserFilter) (users []User, err error) {
+	query, params, err := buildQueryGetUser(request)
+	if err != nil {
+		return []User{}, err
+	}
 
 	rows, err := r.Db.QueryContext(ctx, query, params...)
 	if err != nil {
-		return user, err
+		return []User{}, err
 	}
 
 	defer rows.Close()
 	for rows.Next() {
-		if user != (User{}) {
-			break
-		}
+		user := User{}
 
 		if err := rows.Scan(
 			&user.ID,
@@ -80,14 +82,16 @@ func (r *Repository) GetUser(ctx context.Context, request UserFilter) (user User
 			&user.CreatedTime,
 			&user.UpdatedTime,
 		); err != nil {
-			return user, err
+			return []User{}, err
 		}
+
+		users = append(users, user)
 	}
 
-	return user, nil
+	return users, nil
 }
 
-func buildQueryGetUser(in UserFilter) (string, []interface{}) {
+func buildQueryGetUser(in UserFilter) (string, []interface{}, error) {
 	var (
 		query  string = querySelectUsers
 		params []interface{}
@@ -103,14 +107,5 @@ func buildQueryGetUser(in UserFilter) (string, []interface{}) {
 		offset++
 	}
 
-	if in.Password != "" {
-		query += fmt.Sprintf(whereUserPasssword, offset+1)
-		params = append(
-			params,
-			in.Password,
-		)
-		offset++
-	}
-
-	return query, params
+	return query, params, nil
 }

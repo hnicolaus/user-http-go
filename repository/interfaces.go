@@ -8,5 +8,5 @@ import "context"
 
 type RepositoryInterface interface {
 	InsertUser(ctx context.Context, user User) (userID int64, err error)
-	GetUser(ctx context.Context, request UserFilter) (user User, err error)
+	GetUsers(ctx context.Context, request UserFilter) (users []User, err error)
 }

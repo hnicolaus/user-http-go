@@ -5,11 +5,10 @@ services:
       - "8080:1323"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/database?sslmode=disable
-      PRIVATE_KEY_FILE: ./private.pem
-      PRIVATE_KEY_PASSPHRASE: sawitpro
     depends_on:
       db:
         condition: service_healthy
+    command: ["sh", "-c", "openssl genrsa -out rsa 4096 && openssl rsa -in rsa -pubout -out rsa.pub"]
   db:
     platform: linux/x86_64
     image: postgres:14.1-alpine

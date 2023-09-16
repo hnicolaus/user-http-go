@@ -9,6 +9,7 @@ import (
 
 	"github.com/SawitProRecruitment/UserService/generated"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/SawitProRecruitment/UserService/repository"
 	"github.com/SawitProRecruitment/UserService/utils"
@@ -16,8 +17,77 @@ import (
 
 const (
 	duplicatePhoneNumberErrMsg = "phone number is already registered to an existing user"
-	successMsg                 = "user successfully created"
+	successMsg                 = "request successful"
+	saltCost                   = 12
 )
+
+func (s *Server) UserLogin(ctx echo.Context) error {
+	var (
+		response = generated.UserLoginResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
+		}
+	)
+
+	request := generated.User{}
+	err := json.NewDecoder(ctx.Request().Body).Decode(&request)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	inputPassword, errorList := validatePassword(request.Password)
+	if len(errorList) > 0 {
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	userFilter, errorList := convertUserLoginRequestToUserFilter(request)
+	if len(errorList) > 0 {
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	users, err := s.Repository.GetUsers(context.Background(), userFilter)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+	if len(users) == 0 {
+		response.Header.Messages = []string{"user does not exist"}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	user := users[0]
+
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(inputPassword)) != nil {
+		response.Header.Messages = []string{"invalid password"}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	permissions := []utils.JWTPermission{utils.ProfileGet, utils.ProfileUpdate}
+	jwt, err := utils.GenerateJWT(userFilter.PhoneNumber, permissions)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	response.Data.Id = &user.ID
+	response.Data.Token = &jwt
+	return ctx.JSON(http.StatusOK, response)
+}
+
+func convertUserLoginRequestToUserFilter(request generated.User) (user repository.UserFilter, errorMsgs []string) {
+	validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
+
+	if len(phoneNumberErrorMsgs) > 0 {
+		return repository.UserFilter{}, phoneNumberErrorMsgs
+	}
+
+	return repository.UserFilter{
+		PhoneNumber: validPhoneNumber,
+	}, nil
+}
 
 func (s *Server) RegisterUser(ctx echo.Context) error {
 	var (
@@ -51,7 +121,7 @@ func (s *Server) RegisterUser(ctx echo.Context) error {
 
 	response.Header.Success = true
 	response.Header.Messages = []string{successMsg}
-	response.User.Id = userID
+	response.User.Id = &userID
 	return ctx.JSON(http.StatusOK, response)
 }
 

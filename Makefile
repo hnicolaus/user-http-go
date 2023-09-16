@@ -1,6 +1,10 @@
 
 
-.PHONY: clean all init generate generate_mocks
+.PHONY: clean all init generate generate_mocks cert
+
+cert:
+	openssl genrsa -out rsa 4096
+	openssl rsa -in rsa -pubout -out rsa.pub
 
 all: build/main
 

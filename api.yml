@@ -17,6 +17,27 @@ info:
 servers:
   - url: http://localhost
 paths:
+  /v1/user/login:
+    post:
+      operationId: UserLogin
+      summary: Existing user login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+        '400':
+          description: Bad request - Invalid input
+        '500':
+          description: Internal server error
   /v1/user:
     post:
       operationId: RegisterUser
@@ -40,6 +61,16 @@ paths:
           description: Internal server error
 components:
   schemas:
+    UserLoginResponse:
+        type: object
+        properties:
+          header:
+            $ref: '#/components/schemas/ResponseHeader'
+          data:
+            $ref: '#/components/schemas/User'
+        required:
+          - header
+          - data
     RegisterUserResponse:
       type: object
       properties:
@@ -79,5 +110,6 @@ components:
         password:
           type: string
           description: Placeholder description.
-      required:
-        - id
+        token:
+          type: string
+          description: Placeholder description.

@@ -119,3 +119,13 @@ func buildQueryGetUser(in UserFilter) (string, []interface{}, error) {
 
 	return query, params, nil
 }
+
+func (r *Repository) IncrementSuccessfulLoginCount(ctx context.Context, userID int64) error {
+	rows, err := r.Db.QueryContext(ctx, queryIncrementSuccessfulLoginCount, userID)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	return nil
+}

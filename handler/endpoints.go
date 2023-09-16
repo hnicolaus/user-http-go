@@ -129,6 +129,8 @@ func (s *Server) UserLogin(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, response)
 	}
 
+	s.Repository.IncrementSuccessfulLoginCount(context.Background(), user.ID)
+
 	response.Header.Success = true
 	response.Header.Messages = []string{successMsg}
 	response.Data.Id = &user.ID

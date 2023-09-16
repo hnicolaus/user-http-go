@@ -14,6 +14,7 @@ CREATE TABLE sawitpro_user (
   "password" text not null,
   created_time timestamp NOT NULL default now(),
   updated_time timestamp,
+  successful_login_count int not null default 0,
   CONSTRAINT sawitpro_user_phone_number_uniquekey UNIQUE (phone_number)
 );
 

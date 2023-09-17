@@ -4,248 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
-	"unicode"
 
 	"github.com/SawitProRecruitment/UserService/generated"
-	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/SawitProRecruitment/UserService/repository"
 	"github.com/SawitProRecruitment/UserService/utils"
+	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 )
-
-const (
-	successMsg = "request successful"
-)
-
-func (s *Server) UpdateUser(ctx echo.Context) error {
-	var (
-		response = generated.UpdateUserResponse{
-			Header: generated.ResponseHeader{}, //success is false by default
-		}
-	)
-
-	// Authenticate JWT
-	err := utils.AuthenticateJWT(ctx)
-	if err != nil {
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	// Authorize JWT
-	permissions, ok := ctx.Get("permissions").([]utils.JWTPermission)
-	if !ok {
-		response.Header.Messages = []string{"no permission"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	hasRole := false
-	for _, permission := range permissions {
-		if permission == utils.JWTPermissionUpdateUser {
-			hasRole = true
-		}
-	}
-
-	if !hasRole {
-		response.Header.Messages = []string{"no permission"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	userID, ok := ctx.Get("user_id").(int64)
-	if !ok {
-		response.Header.Messages = []string{"JWT missing user_id"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	// Update user data
-	request := generated.User{}
-	err = json.NewDecoder(ctx.Request().Body).Decode(&request)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, nil)
-	}
-
-	updateRequest, errorList := convertUpdateUserRequestToUser(userID, request)
-	if len(errorList) > 0 {
-		response.Header.Messages = errorList
-		return ctx.JSON(http.StatusBadRequest, response)
-	}
-
-	totalUpdatedUsers, err := s.Repository.UpdateUser(context.Background(), updateRequest)
-	if err != nil {
-		if utils.IsUniqueConstraintViolation(err) {
-			response.Header.Messages = []string{"phone number is already registered to an existing user"}
-			return ctx.JSON(http.StatusConflict, response)
-		}
-
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusInternalServerError, response)
-	}
-	if totalUpdatedUsers == 0 {
-		response.Header.Messages = []string{"user not found"}
-		return ctx.JSON(http.StatusNotFound, response)
-	}
-
-	response.Header.Success = true
-	response.Header.Messages = []string{successMsg}
-	return ctx.JSON(http.StatusOK, response)
-}
-
-func convertUpdateUserRequestToUser(userID int64, request generated.User) (user repository.User, errorMsgs []string) {
-	if request.PhoneNumber != nil {
-		validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
-		user.PhoneNumber = validPhoneNumber
-
-		errorMsgs = append(errorMsgs, phoneNumberErrorMsgs...)
-	}
-
-	if request.FullName != nil {
-		validFullName, fullNameErrorMsgs := validateFullName(request.FullName)
-		user.FullName = validFullName
-
-		errorMsgs = append(errorMsgs, fullNameErrorMsgs...)
-
-	}
-
-	if len(errorMsgs) > 0 {
-		return repository.User{}, errorMsgs
-	}
-
-	user.ID = userID
-	return user, nil
-}
-
-func (s *Server) GetUser(ctx echo.Context) error {
-	var (
-		response = generated.GetUserResponse{
-			Header: generated.ResponseHeader{}, //success is false by default
-		}
-	)
-
-	// Authenticate JWT
-	err := utils.AuthenticateJWT(ctx)
-	if err != nil {
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	// Authorize JWT
-	permissions, ok := ctx.Get("permissions").([]utils.JWTPermission)
-	if !ok {
-		response.Header.Messages = []string{"no permission"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	hasRole := false
-	for _, permission := range permissions {
-		if permission == utils.JWTPermissionGetUser {
-			hasRole = true
-		}
-	}
-
-	if !hasRole {
-		response.Header.Messages = []string{"no permission"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	userID, ok := ctx.Get("user_id").(int64)
-	if !ok {
-		response.Header.Messages = []string{"JWT missing user_id"}
-		return ctx.JSON(http.StatusForbidden, response)
-	}
-
-	// Get data for userID in the JWT
-	users, err := s.Repository.GetUsers(context.Background(), repository.UserFilter{UserID: userID})
-	if err != nil {
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusInternalServerError, response)
-	}
-	if len(users) == 0 {
-		response.Header.Messages = []string{"user not found"}
-		return ctx.JSON(http.StatusInternalServerError, response)
-	}
-	user := users[0]
-
-	response.Header.Success = true
-	response.Header.Messages = []string{successMsg}
-	response.Data = generated.User{
-		FullName:    &user.FullName,
-		PhoneNumber: &user.PhoneNumber,
-	}
-
-	return ctx.JSON(http.StatusOK, response)
-}
-
-func (s *Server) UserLogin(ctx echo.Context) error {
-	var (
-		response = generated.UserLoginResponse{
-			Header: generated.ResponseHeader{}, //success is false by default
-		}
-	)
-
-	request := generated.User{}
-	err := json.NewDecoder(ctx.Request().Body).Decode(&request)
-	if err != nil {
-		return ctx.JSON(http.StatusBadRequest, nil)
-	}
-
-	inputPassword, errorList := validatePassword(request.Password)
-	if len(errorList) > 0 {
-		response.Header.Messages = errorList
-		return ctx.JSON(http.StatusBadRequest, response)
-	}
-
-	userFilter, errorList := convertUserLoginRequestToUserFilter(request)
-	if len(errorList) > 0 {
-		response.Header.Messages = errorList
-		return ctx.JSON(http.StatusBadRequest, response)
-	}
-
-	users, err := s.Repository.GetUsers(context.Background(), userFilter)
-	if err != nil {
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusInternalServerError, response)
-	}
-	if len(users) == 0 {
-		response.Header.Messages = []string{"user does not exist"}
-		return ctx.JSON(http.StatusBadRequest, response)
-	}
-
-	user := users[0]
-
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(inputPassword)) != nil {
-		response.Header.Messages = []string{"invalid password"}
-		return ctx.JSON(http.StatusBadRequest, response)
-	}
-
-	s.Repository.IncrementSuccessfulLoginCount(context.Background(), user.ID)
-
-	// NOTE: Bearer token is returned in the Authorization header
-	// Set data to Echo context so middleware can generate and return JWT in the Authorization header
-	ctx.Set(string(utils.JWTClaimUserID), user.ID)
-	ctx.Set(string(utils.JWTClaimPermissions), []utils.JWTPermission{utils.JWTPermissionGetUser, utils.JWTPermissionUpdateUser})
-
-	response.Header.Success = true
-	response.Header.Messages = []string{successMsg}
-	response.Data.Id = &user.ID
-
-	return ctx.JSON(http.StatusOK, response)
-}
-
-func convertUserLoginRequestToUserFilter(request generated.User) (user repository.UserFilter, errorMsgs []string) {
-	validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
-
-	if len(phoneNumberErrorMsgs) > 0 {
-		return repository.UserFilter{}, phoneNumberErrorMsgs
-	}
-
-	return repository.UserFilter{
-		PhoneNumber: validPhoneNumber,
-	}, nil
-}
 
 func (s *Server) RegisterUser(ctx echo.Context) error {
 	var (
+		context = context.Background()
+
 		response = generated.RegisterUserResponse{
 			Header: generated.ResponseHeader{}, //success is false by default
 		}
@@ -263,7 +33,7 @@ func (s *Server) RegisterUser(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
-	userID, err := s.Repository.InsertUser(context.Background(), user)
+	userID, err := s.Repository.InsertUser(context, user)
 	if err != nil {
 		if utils.IsUniqueConstraintViolation(err) {
 			response.Header.Messages = []string{"phone number is already registered to an existing user"}
@@ -280,117 +50,137 @@ func (s *Server) RegisterUser(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, response)
 }
 
-func convertRegisterUserRequestToUser(request generated.User) (user repository.User, errorMsgs []string) {
-	validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
-	validFullName, fullNameErrorMsgs := validateFullName(request.FullName)
-	validPassword, passwordErrorMsgs := validatePassword(request.Password)
+// NOTE: Check Authenticated cmd/main.go that returns JWT token after successful login
+func (s *Server) UserLogin(ctx echo.Context) error {
+	var (
+		context = context.Background()
 
-	errorList := append(phoneNumberErrorMsgs, fullNameErrorMsgs...)
-	errorList = append(errorList, passwordErrorMsgs...)
+		response = generated.UserLoginResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
+		}
+	)
 
+	request := generated.User{}
+	err := json.NewDecoder(ctx.Request().Body).Decode(&request)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	// Get user's phone number from request body
+	validPhoneNumber, errorList := validatePhoneNumber(request.PhoneNumber)
 	if len(errorList) > 0 {
-		return repository.User{}, errorList
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
-	return repository.User{
-		FullName:    validFullName,
-		PhoneNumber: validPhoneNumber,
-		Password:    validPassword,
-	}, nil
+	// Get user data
+	user, err := s.getSingleUser(context, repository.UserFilter{PhoneNumber: validPhoneNumber})
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
+	}
+
+	// Validate password format is valid
+	inputPassword, errorList := validatePassword(request.Password)
+	if len(errorList) > 0 {
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	// Validate input password (plain) matches user's password (hashed and salted)
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(inputPassword)) != nil {
+		response.Header.Messages = []string{"invalid password"}
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	// Increment successful login count for the users
+	s.Repository.IncrementSuccessfulLoginCount(context, user.ID)
+
+	// Set data to Echo context so AuthenticatedMiddleware can generate and return JWT in the Authorization header
+	ctx.Set(string(utils.JWTClaimUserID), user.ID)
+	ctx.Set(string(utils.JWTClaimPermissions), []utils.JWTPermission{utils.JWTPermissionGetUser, utils.JWTPermissionUpdateUser})
+
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	response.Data.Id = &user.ID
+
+	return ctx.JSON(http.StatusOK, response)
 }
 
-func validatePhoneNumber(input *string) (validPhoneNumber string, errorList []string) {
-	phoneNumber := ""
+// NOTE: Check AuthenticationMiddleware cmd/main.go that authenticates the JWT token
+func (s *Server) GetUser(ctx echo.Context) error {
+	var (
+		context = context.Background()
 
-	if input != nil {
-		phoneNumber = strings.TrimSpace(*input)
-	}
-
-	// Verify "+62" prefix
-	if !strings.HasPrefix(phoneNumber, "+62") {
-		errorList = append(errorList, "phone_number should start with +62 (rule 2)")
-	}
-
-	// Check the length of the phone number
-	if len(phoneNumber) < 10 || len(phoneNumber) > 13 {
-		errorList = append(errorList, "phone_number should be 10 to 13 digits (rule 1)")
-	}
-
-	// Check if all remaining characters are digits
-	for i := 3; i < len(phoneNumber); i++ {
-		c := phoneNumber[i]
-		if !unicode.IsDigit(rune(c)) {
-			errorList = append(errorList, "phone_number should only contain numbers (rule 1)")
+		response = generated.GetUserResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
 		}
+	)
+
+	// Authenticate and get userID of the requester
+	userID, err := authenticate(ctx, utils.JWTPermissionGetUser)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusForbidden, response)
 	}
 
-	if len(errorList) == 0 {
-		validPhoneNumber = phoneNumber
+	// Get data for the userID
+	user, err := s.getSingleUser(context, repository.UserFilter{UserID: userID})
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response)
 	}
 
-	return validPhoneNumber, errorList
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	response.Data = generated.User{
+		FullName:    &user.FullName,
+		PhoneNumber: &user.PhoneNumber,
+	}
+
+	return ctx.JSON(http.StatusOK, response)
 }
 
-func validateFullName(input *string) (validFullName string, errorList []string) {
-	fullName := ""
+// NOTE: Check AuthenticationMiddleware cmd/main.go that authenticates the JWT token
+func (s *Server) UpdateUser(ctx echo.Context) error {
+	var (
+		context = context.Background()
 
-	if input != nil {
-		fullName = strings.TrimSpace(*input)
-	}
-
-	if len(fullName) < 3 || len(fullName) > 60 {
-		errorList = append(errorList, "full_name should be 3 to 60 characters (rule 3)")
-	}
-
-	if len(errorList) == 0 {
-		validFullName = fullName
-	}
-
-	return validFullName, errorList
-}
-
-func validatePassword(input *string) (validPassword string, errorList []string) {
-	password := ""
-
-	if input != nil {
-		password = *input
-	}
-
-	if len(password) < 6 || len(password) > 64 {
-		errorList = append(errorList, "password should be 6 to 64 characters (rule 4)")
-	}
-
-	containsCapital, containsNumber, containsSpecialAlphaNumeric := false, false, false
-	for _, c := range password {
-		if !unicode.IsLetter(c) && !unicode.IsDigit(c) {
-			containsSpecialAlphaNumeric = true
+		response = generated.UpdateUserResponse{
+			Header: generated.ResponseHeader{}, //success is false by default
 		}
-		if unicode.IsUpper(c) {
-			containsCapital = true
-		}
-		if unicode.IsNumber(c) {
-			containsNumber = true
+	)
+
+	// Authenticate and get userID of the requester
+	userID, err := authenticate(ctx, utils.JWTPermissionUpdateUser)
+	if err != nil {
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusForbidden, response)
+	}
+
+	// Update user data
+	request := generated.User{}
+	err = json.NewDecoder(ctx.Request().Body).Decode(&request)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, nil)
+	}
+
+	updateRequest, errorList := convertUpdateUserRequestToUser(userID, request)
+	if len(errorList) > 0 {
+		response.Header.Messages = errorList
+		return ctx.JSON(http.StatusBadRequest, response)
+	}
+
+	if err := s.Repository.UpdateUser(context, updateRequest); err != nil {
+		if utils.IsUniqueConstraintViolation(err) {
+			response.Header.Messages = []string{"phone number is already registered to an existing user"}
+			return ctx.JSON(http.StatusConflict, response)
 		}
 
-		if containsSpecialAlphaNumeric && containsCapital && containsNumber {
-			break
-		}
+		response.Header.Messages = []string{err.Error()}
+		return ctx.JSON(http.StatusInternalServerError, response)
 	}
 
-	if !containsCapital {
-		errorList = append(errorList, "password should contain a capital letter (rule 4)")
-	}
-	if !containsNumber {
-		errorList = append(errorList, "password should contain a number (rule 4)")
-	}
-	if !containsSpecialAlphaNumeric {
-		errorList = append(errorList, "password should contain an alphanumeric character (rule 4)")
-
-	}
-
-	if len(errorList) == 0 {
-		validPassword = password
-	}
-
-	return validPassword, errorList
+	response.Header.Success = true
+	response.Header.Messages = []string{successMsg}
+	return ctx.JSON(http.StatusOK, response)
 }

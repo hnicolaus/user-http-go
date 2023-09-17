@@ -12,7 +12,6 @@ import (
 	"github.com/SawitProRecruitment/UserService/repository"
 	"github.com/SawitProRecruitment/UserService/utils"
 	"github.com/dgrijalva/jwt-go"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -42,8 +41,10 @@ func newServer() *handler.Server {
 	return handler.NewServer(opts)
 }
 
+// AuthenticationMiddleware validates incoming JWT (RS256 algorithm) using public key.
 func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
+		// Add endpoints in the `whitelistedEndpoints` map to authenticate incoming JWT with RS256 algorithm
 		whitelistedEndpoints := map[string]bool{
 			"GET - /v1/user": true,
 			"PUT - /v1/user": true,
@@ -51,54 +52,71 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		endpoint := fmt.Sprintf("%s - %s", ctx.Request().Method, ctx.Request().URL.Path)
 		if whitelistedEndpoints[endpoint] {
-			authHeader := ctx.Request().Header.Get("Authorization")
-			if authHeader == "" {
-				return ctx.String(http.StatusUnauthorized, "missing authorization header")
-			}
-
-			if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-				return ctx.String(http.StatusUnauthorized, "token format is invalid")
-			}
-
-			token := authHeader[7:]
-
-			publicKeyData, err := os.ReadFile("../rsa.pub")
-			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, err.Error())
-			}
-
-			publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyData)
-			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, err.Error())
-			}
-
-			// Parse & validate token using publicKey
-			tok, err := jwt.ParseWithClaims(token, &utils.CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-				// Use publicKey for token verification
-				return publicKey, nil
-			})
-			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, err.Error())
-			}
-
-			// Check if token is valid (has not expired)
-			if claims, ok := tok.Claims.(*utils.CustomClaims); ok && tok.Valid {
-				if time.Now().Unix() >= claims.ExpiresAt {
-					return ctx.JSON(http.StatusInternalServerError, errors.New("JWT has expired"))
+			claims, err := func() (*utils.CustomClaims, error) {
+				authHeader := ctx.Request().Header.Get("Authorization")
+				if authHeader == "" {
+					return nil, errors.New("missing authorization header")
 				}
 
-				// Set custom claims to context so handler can use the values, i.e. authorization
-				ctx.Set(string(utils.JWTClaimUserID), claims.UserID)
-				ctx.Set(string(utils.JWTClaimPermissions), claims.Permissions)
+				if len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+					return nil, errors.New("token format is invalid")
+				}
+
+				token := authHeader[7:]
+
+				publicKeyData, err := os.ReadFile("../rsa.pub")
+				if err != nil {
+					return nil, err
+				}
+
+				publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyData)
+				if err != nil {
+					return nil, err
+				}
+
+				// Parse & validate token using publicKey
+				tok, err := jwt.ParseWithClaims(token, &utils.CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+					// Use publicKey for token verification
+					return publicKey, nil
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				// Check if token is valid (has not expired)
+				claims, ok := tok.Claims.(*utils.CustomClaims)
+				if ok && tok.Valid {
+					if time.Now().Unix() >= claims.ExpiresAt {
+						return nil, errors.New("JWT has expired")
+					}
+				}
+
+				return claims, nil
+			}()
+			if err != nil {
+				return ctx.JSON(http.StatusUnauthorized, utils.JWTResponse{
+					Header: generated.ResponseHeader{
+						Messages: []string{err.Error()},
+						Success:  false,
+					},
+				})
 			}
+
+			// Set custom claims to context so handler can use the values, i.e. authorization
+			ctx.Set(string(utils.JWTClaimUserID), claims.UserID)
+			ctx.Set(string(utils.JWTClaimPermissions), claims.Permissions)
 		}
 
 		return next(ctx)
 	}
 }
 
+// AuthenticatedMiddleware generates JWT (RS256 algorithm) using private key.
+// The JWT will contain userID in its claims.
+// The JWT will be included in the `Authentication` response header only if handler is returning status OK.
 func AuthenticatedMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
+		// Add endpoints in the `whitelistedEndpoints` map to return JWT with RS256 algorithm
 		whitelistedEndpoints := map[string]bool{
 			"POST - /v1/user/login": true,
 		}
@@ -142,6 +160,7 @@ func AuthenticatedMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 				bearerToken := fmt.Sprintf("Bearer %s", jwtToken)
 
+				// Only add JWT in `Authorization` response header if handler returns OK
 				if ctx.Response().Status == http.StatusOK {
 					ctx.Response().Header().Set(echo.HeaderAuthorization, bearerToken)
 				}

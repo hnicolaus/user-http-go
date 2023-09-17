@@ -218,19 +218,17 @@ func (s *Server) UserLogin(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
-	permissions := []utils.JWTPermission{utils.JWTPermissionGetUser, utils.JWTPermissionUpdateUser}
-	jwt, err := utils.GenerateJWT(user.ID, permissions)
-	if err != nil {
-		response.Header.Messages = []string{err.Error()}
-		return ctx.JSON(http.StatusInternalServerError, response)
-	}
-
 	s.Repository.IncrementSuccessfulLoginCount(context.Background(), user.ID)
+
+	// NOTE: Bearer token is returned in the Authorization header
+	// Set data to Echo context so middleware can generate and return JWT in the Authorization header
+	ctx.Set(string(utils.JWTClaimUserID), user.ID)
+	ctx.Set(string(utils.JWTClaimPermissions), []utils.JWTPermission{utils.JWTPermissionGetUser, utils.JWTPermissionUpdateUser})
 
 	response.Header.Success = true
 	response.Header.Messages = []string{successMsg}
 	response.Data.Id = &user.ID
-	response.Data.Token = &jwt
+
 	return ctx.JSON(http.StatusOK, response)
 }
 

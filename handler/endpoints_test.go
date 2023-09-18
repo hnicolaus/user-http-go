@@ -538,7 +538,7 @@ func TestGetUser(t *testing.T) {
 			wantHttpStatusCode: http.StatusInternalServerError,
 		},
 		{
-			name: "fail-get-user",
+			name: "fail-user-not-found",
 			ctxPermissions: []utils.JWTPermission{
 				utils.JWTPermissionGetUser,
 			},

@@ -12,6 +12,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var (
+	//define function wrappers so we can inject dummy function in UT
+	fnValidatePhoneNumber func(*string) (string, []string) = validatePhoneNumber
+	fnValidatePassword    func(*string) (string, []string) = validatePassword
+	fnValidateFullName    func(*string) (string, []string) = validateFullName
+)
+
 const (
 	successMsg                   = "request successful"
 	duplicatePhoneNumberErrorMsg = "phone number is already registered to an existing user"
@@ -61,6 +68,7 @@ func validatePhoneNumber(input *string) (validPhoneNumber string, errorList []st
 		c := phoneNumber[i]
 		if !unicode.IsDigit(rune(c)) {
 			errorList = append(errorList, "phone_number should only contain numbers (rule 1)")
+			break
 		}
 	}
 
@@ -124,7 +132,7 @@ func validatePassword(input *string) (validPassword string, errorList []string) 
 		errorList = append(errorList, "password should contain a number (rule 4)")
 	}
 	if !containsSpecialAlphaNumeric {
-		errorList = append(errorList, "password should contain an alphanumeric character (rule 4)")
+		errorList = append(errorList, "password should contain a special alphanumeric character (rule 4)")
 
 	}
 
@@ -136,9 +144,9 @@ func validatePassword(input *string) (validPassword string, errorList []string) 
 }
 
 func convertRegisterUserRequestToUser(request generated.User) (user repository.User, errorMsgs []string) {
-	validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
-	validFullName, fullNameErrorMsgs := validateFullName(request.FullName)
-	validPassword, passwordErrorMsgs := validatePassword(request.Password)
+	validPhoneNumber, phoneNumberErrorMsgs := fnValidatePhoneNumber(request.PhoneNumber)
+	validFullName, fullNameErrorMsgs := fnValidateFullName(request.FullName)
+	validPassword, passwordErrorMsgs := fnValidatePassword(request.Password)
 
 	errorList := append(phoneNumberErrorMsgs, fullNameErrorMsgs...)
 	errorList = append(errorList, passwordErrorMsgs...)
@@ -156,14 +164,14 @@ func convertRegisterUserRequestToUser(request generated.User) (user repository.U
 
 func convertUpdateUserRequestToUser(userID int64, request generated.User) (user repository.User, errorMsgs []string) {
 	if request.PhoneNumber != nil {
-		validPhoneNumber, phoneNumberErrorMsgs := validatePhoneNumber(request.PhoneNumber)
+		validPhoneNumber, phoneNumberErrorMsgs := fnValidatePhoneNumber(request.PhoneNumber)
 		user.PhoneNumber = validPhoneNumber
 
 		errorMsgs = append(errorMsgs, phoneNumberErrorMsgs...)
 	}
 
 	if request.FullName != nil {
-		validFullName, fullNameErrorMsgs := validateFullName(request.FullName)
+		validFullName, fullNameErrorMsgs := fnValidateFullName(request.FullName)
 		user.FullName = validFullName
 
 		errorMsgs = append(errorMsgs, fullNameErrorMsgs...)

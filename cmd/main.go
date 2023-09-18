@@ -42,6 +42,7 @@ func newServer() *handler.Server {
 }
 
 // AuthenticationMiddleware validates incoming JWT (RS256 algorithm) using public key.
+// See command in Dockerfile: openssl rsa -in /tmp/rsa -pubout -out /tmp/rsa.pub
 func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		// Add endpoints in the `whitelistedEndpoints` map to authenticate incoming JWT with RS256 algorithm
@@ -114,6 +115,7 @@ func AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 // AuthenticatedMiddleware generates JWT (RS256 algorithm) using private key.
 // The JWT will contain userID in its claims.
 // The JWT will be included in the `Authentication` response header only if handler is returning status OK.
+// See command in Dockerfile: openssl genrsa -out /tmp/rsa 4096
 func AuthenticatedMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		// Add endpoints in the `whitelistedEndpoints` map to return JWT with RS256 algorithm

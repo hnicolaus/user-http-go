@@ -57,7 +57,7 @@ func (s *Server) registerUser(ctx echo.Context) (int, generated.RegisterUserResp
 	response.Header.Success = true
 	response.Header.Messages = []string{successMsg}
 	response.User.Id = &userID
-	return http.StatusOK, response
+	return http.StatusCreated, response
 }
 
 // NOTE: Check Authenticated cmd/main.go that returns JWT token after successful login

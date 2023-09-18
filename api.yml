@@ -51,6 +51,8 @@ paths:
                 $ref: '#/components/schemas/GetUserResponse'
         '403':
           description: Forbidden
+        '500':
+          description: Internal server error
     post:
       operationId: RegisterUser
       summary: Create a new user
@@ -69,6 +71,8 @@ paths:
                 $ref: '#/components/schemas/RegisterUserResponse'
         '400':
           description: Bad request - Invalid input
+        '409':
+          description: Conflict
         '500':
           description: Internal server error
     put:
@@ -137,9 +141,9 @@ components:
       properties:
         success:
           type: boolean
-          description: Placeholder description.
+          description: Boolean to denote whether response is OK or not.
         messages:
-          description: Placeholder description.
+          description: Array of error message(s).
           type: array
           items:
             type: string
@@ -154,10 +158,10 @@ components:
           format: int64
         phone_number:
           type: string
-          description: Placeholder description.
+          description: User's phone number.
         full_name:
           type: string
-          description: Placeholder description.
+          description: User's full name.
         password:
           type: string
-          description: Placeholder description.
+          description: User's password.

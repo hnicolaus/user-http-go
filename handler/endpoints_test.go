@@ -76,7 +76,7 @@ func TestRegisterUser(t *testing.T) {
 					Id: int64Ptr(123),
 				},
 			},
-			wantHttpStatusCode: http.StatusOK,
+			wantHttpStatusCode: http.StatusCreated,
 		},
 		{
 			name: "fail-insert-user",

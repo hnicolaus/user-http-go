@@ -107,21 +107,21 @@ components:
         properties:
           header:
             $ref: '#/components/schemas/ResponseHeader'
-          data:
+          user:
             $ref: '#/components/schemas/User'
         required:
           - header
-          - data
+          - user
     UserLoginResponse:
         type: object
         properties:
           header:
             $ref: '#/components/schemas/ResponseHeader'
-          data:
+          user:
             $ref: '#/components/schemas/User'
         required:
           - header
-          - data
+          - user
     RegisterUserResponse:
       type: object
       properties:

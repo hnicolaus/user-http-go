@@ -13,14 +13,12 @@ import (
 )
 
 const (
-	successMsg = "request successful"
+	successMsg                   = "request successful"
+	duplicatePhoneNumberErrorMsg = "phone number is already registered to an existing user"
 )
 
-func authenticate(ctx echo.Context, requiredPermission utils.JWTPermission) (userID int64, err error) {
-	permissions, ok := ctx.Get(string(utils.JWTClaimPermissions)).([]utils.JWTPermission)
-	if !ok {
-		return userID, errors.New("not authorized: roles are missing")
-	}
+func authorize(ctx echo.Context, requiredPermission utils.JWTPermission) (userID int64, err error) {
+	permissions, _ := ctx.Get(string(utils.JWTClaimPermissions)).([]utils.JWTPermission)
 
 	hasRole := false
 	for _, permission := range permissions {
@@ -30,10 +28,10 @@ func authenticate(ctx echo.Context, requiredPermission utils.JWTPermission) (use
 	}
 
 	if !hasRole {
-		return userID, errors.New("not authorized: no accepted roles")
+		return userID, errors.New("not authorized: missing required permission")
 	}
 
-	userID, ok = ctx.Get(string(utils.JWTClaimUserID)).(int64)
+	userID, ok := ctx.Get(string(utils.JWTClaimUserID)).(int64)
 	if !ok {
 		return userID, errors.New("missing user_id")
 	}

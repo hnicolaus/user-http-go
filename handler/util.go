@@ -6,9 +6,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/SawitProRecruitment/UserService/generated"
-	"github.com/SawitProRecruitment/UserService/repository"
-	"github.com/SawitProRecruitment/UserService/utils"
+	"github.com/UserService/generated"
+	"github.com/UserService/repository"
+	"github.com/UserService/utils"
 	"github.com/labstack/echo/v4"
 )
 

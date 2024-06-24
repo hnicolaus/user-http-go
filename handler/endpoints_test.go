@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/SawitProRecruitment/UserService/generated"
-	"github.com/SawitProRecruitment/UserService/repository"
-	"github.com/SawitProRecruitment/UserService/utils"
+	"github.com/UserService/generated"
+	"github.com/UserService/repository"
+	"github.com/UserService/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
@@ -41,13 +41,13 @@ func TestRegisterUser(t *testing.T) {
 		{
 			name: "success",
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
 			fnConvertRegisterUserRequestToUser: func(generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}
@@ -60,7 +60,7 @@ func TestRegisterUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().InsertUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}).Return(int64(123), nil)
@@ -81,13 +81,13 @@ func TestRegisterUser(t *testing.T) {
 		{
 			name: "fail-insert-user",
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
 			fnConvertRegisterUserRequestToUser: func(generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}
@@ -100,7 +100,7 @@ func TestRegisterUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().InsertUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}).Return(int64(0), errors.New("error-insert-user"))
@@ -118,13 +118,13 @@ func TestRegisterUser(t *testing.T) {
 		{
 			name: "fail-insert-user-conflict-phone-number",
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
 			fnConvertRegisterUserRequestToUser: func(generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}
@@ -137,7 +137,7 @@ func TestRegisterUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().InsertUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}).Return(int64(0), &errorConflictUserPhoneNumber)
@@ -155,13 +155,13 @@ func TestRegisterUser(t *testing.T) {
 		{
 			name: "fail-insert-user-conflict-phone-number",
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
 			fnConvertRegisterUserRequestToUser: func(generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}
@@ -174,7 +174,7 @@ func TestRegisterUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().InsertUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 					Password:    "P455w0rd!.",
 				}).Return(int64(0), &errorConflictUserPhoneNumber)
@@ -192,7 +192,7 @@ func TestRegisterUser(t *testing.T) {
 		{
 			name: "fail-invalid-input",
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+62812"),
 				Password:    stringPtr("P455w"),
 			},
@@ -276,7 +276,7 @@ func TestUserLogin(t *testing.T) {
 				}).Return([]repository.User{
 					{
 						ID:          123,
-						FullName:    "SawitPro User",
+						FullName:    "User",
 						PhoneNumber: "+628123456789",
 						Password:    "$2a$12$41bm0d9VyLDKALovox4S9.FoNezvO9tB8ck94/0fEyKcYIFmV8guq",
 					},
@@ -312,7 +312,7 @@ func TestUserLogin(t *testing.T) {
 				}).Return([]repository.User{
 					{
 						ID:          123,
-						FullName:    "SawitPro User",
+						FullName:    "User",
 						PhoneNumber: "+628123456789",
 						Password:    "$2a$12$41bm0d9VyLDKALovox4S9.FoNezvO9tB8ck94/0fEyKcYIFmV8guq",
 					},
@@ -446,7 +446,7 @@ func TestGetUser(t *testing.T) {
 				}).Return([]repository.User{
 					{
 						ID:          123,
-						FullName:    "SawitPro User",
+						FullName:    "User",
 						PhoneNumber: "+628123456789",
 						Password:    "$2a$12$41bm0d9VyLDKALovox4S9.FoNezvO9tB8ck94/0fEyKcYIFmV8guq",
 					},
@@ -460,7 +460,7 @@ func TestGetUser(t *testing.T) {
 					Messages: []string{successMsg},
 				},
 				User: generated.User{
-					FullName:    stringPtr("SawitPro User"),
+					FullName:    stringPtr("User"),
 					PhoneNumber: stringPtr("+628123456789"),
 				},
 			},
@@ -621,12 +621,12 @@ func TestUpdateUser(t *testing.T) {
 			},
 			ctxUserID: 123,
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 			},
 			fnConvertUpdateUserRequestToUser: func(int64, generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}
 
@@ -638,7 +638,7 @@ func TestUpdateUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().UpdateUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}).Return(nil)
 
@@ -659,7 +659,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 			ctxUserID: 123,
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 			},
 			mockRepository: func(controller *gomock.Controller) *repository.MockRepositoryInterface {
@@ -681,12 +681,12 @@ func TestUpdateUser(t *testing.T) {
 			},
 			ctxUserID: 123,
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 			},
 			fnConvertUpdateUserRequestToUser: func(int64, generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}
 
@@ -698,7 +698,7 @@ func TestUpdateUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().UpdateUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}).Return(errors.New("error-update-user"))
 
@@ -719,12 +719,12 @@ func TestUpdateUser(t *testing.T) {
 			},
 			ctxUserID: 123,
 			requestBody: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 			},
 			fnConvertUpdateUserRequestToUser: func(int64, generated.User) (repository.User, []string) {
 				user := repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}
 
@@ -736,7 +736,7 @@ func TestUpdateUser(t *testing.T) {
 				mock := repository.NewMockRepositoryInterface(controller)
 
 				mock.EXPECT().UpdateUser(gomock.Any(), repository.User{
-					FullName:    "SawitPro User",
+					FullName:    "User",
 					PhoneNumber: "+628123456789",
 				}).Return(&errorConflictUserPhoneNumber)
 

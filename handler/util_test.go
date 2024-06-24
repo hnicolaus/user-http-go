@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/SawitProRecruitment/UserService/generated"
-	"github.com/SawitProRecruitment/UserService/repository"
-	"github.com/SawitProRecruitment/UserService/utils"
+	"github.com/UserService/generated"
+	"github.com/UserService/repository"
+	"github.com/UserService/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 )
@@ -231,7 +231,7 @@ func Test_convertRegisterUserRequestToUser(t *testing.T) {
 		{
 			name: "success",
 			input: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
@@ -239,13 +239,13 @@ func Test_convertRegisterUserRequestToUser(t *testing.T) {
 				return "+628123456789", []string{}
 			},
 			fnValidateFullName: func(*string) (string, []string) {
-				return "SawitPro User", []string{}
+				return "User", []string{}
 			},
 			fnValidatePassword: func(*string) (string, []string) {
 				return "P455w0rd!.", []string{}
 			},
 			wantUser: repository.User{
-				FullName:    "SawitPro User",
+				FullName:    "User",
 				PhoneNumber: "+628123456789",
 				Password:    "P455w0rd!.",
 			},
@@ -254,7 +254,7 @@ func Test_convertRegisterUserRequestToUser(t *testing.T) {
 		{
 			name: "fail-all-validations",
 			input: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
@@ -313,7 +313,7 @@ func Test_convertUpdateUserRequestToUser(t *testing.T) {
 			name:        "success",
 			inputUserID: 123,
 			input: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
@@ -321,11 +321,11 @@ func Test_convertUpdateUserRequestToUser(t *testing.T) {
 				return "+628123456789", []string{}
 			},
 			fnValidateFullName: func(*string) (string, []string) {
-				return "SawitPro User", []string{}
+				return "User", []string{}
 			},
 			wantUser: repository.User{
 				ID:          123,
-				FullName:    "SawitPro User",
+				FullName:    "User",
 				PhoneNumber: "+628123456789",
 			},
 			wantErrorMsgs: nil,
@@ -333,7 +333,7 @@ func Test_convertUpdateUserRequestToUser(t *testing.T) {
 		{
 			name: "fail-all-validations",
 			input: generated.User{
-				FullName:    stringPtr("SawitPro User"),
+				FullName:    stringPtr("User"),
 				PhoneNumber: stringPtr("+628123456789"),
 				Password:    stringPtr("P455w0rd!."),
 			},
@@ -460,7 +460,7 @@ func Test_getSingleUser(t *testing.T) {
 				}).Return([]repository.User{
 					{
 						ID:          123,
-						FullName:    "SawitPro User",
+						FullName:    "User",
 						PhoneNumber: "+628123456789",
 						Password:    "$2a$12$41bm0d9VyLDKALovox4S9.FoNezvO9tB8ck94/0fEyKcYIFmV8guq",
 					},
@@ -470,7 +470,7 @@ func Test_getSingleUser(t *testing.T) {
 			},
 			wantUser: repository.User{
 				ID:          123,
-				FullName:    "SawitPro User",
+				FullName:    "User",
 				PhoneNumber: "+628123456789",
 				Password:    "$2a$12$41bm0d9VyLDKALovox4S9.FoNezvO9tB8ck94/0fEyKcYIFmV8guq",
 			},

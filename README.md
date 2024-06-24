@@ -1,4 +1,4 @@
-# Backend Engineering Interview Assignment (Golang)
+# HTTP API written in Go using Echo framework
 
 ## Requirements
 

@@ -1,8 +1,9 @@
-module github.com/SawitProRecruitment/UserService
+module github.com/UserService
 
 go 1.19
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/golang/mock v1.6.0
 	github.com/labstack/echo/v4 v4.11.1
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect

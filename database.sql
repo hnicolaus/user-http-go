@@ -7,7 +7,7 @@
   In this assignment we will use PostgreSQL as the database.
   */
 
-CREATE TABLE sawitpro_user (
+CREATE TABLE "user" (
   id serial PRIMARY KEY,
   full_name text NOT NULL,
   phone_number text NOT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE sawitpro_user (
   created_time timestamp NOT NULL default now(),
   updated_time timestamp,
   successful_login_count int not null default 0,
-  CONSTRAINT sawitpro_user_phone_number_uniquekey UNIQUE (phone_number)
+  CONSTRAINT user_phone_number_uniquekey UNIQUE (phone_number)
 );
 
-INSERT INTO sawitpro_user (full_name, phone_number, "password") VALUES ('name1', '+6281234567890', 'password1');
-INSERT INTO sawitpro_user (full_name, phone_number, "password") VALUES ('name2', '+6289876543210', 'password2');
+INSERT INTO "user" (full_name, phone_number, "password") VALUES ('name1', '+6281234567890', 'password1');
+INSERT INTO "user" (full_name, phone_number, "password") VALUES ('name2', '+6289876543210', 'password2');

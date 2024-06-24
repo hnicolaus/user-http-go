@@ -1,6 +1,6 @@
 package handler
 
-import "github.com/SawitProRecruitment/UserService/repository"
+import "github.com/UserService/repository"
 
 type Server struct {
 	Repository repository.RepositoryInterface

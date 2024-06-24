@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/SawitProRecruitment/UserService/generated"
+	"github.com/UserService/generated"
 	"github.com/dgrijalva/jwt-go"
 )
 
